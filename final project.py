@@ -13,7 +13,7 @@ from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-# cleaning the data
+# cleaning the data (dataset file attached to git file)
 # note - categorical values: 0 = no, 1 = yes or 0 = female, 1 = male
 data = pd.read_csv(os.path.abspath("heart_failure_clinical_records_dataset.csv"))
 print(data.info())
@@ -21,7 +21,7 @@ abs_z_scores = np.abs(stats.zscore(data[["creatinine_phosphokinase", "ejection_f
 filtered_entries = (abs_z_scores < 3).all(axis=1)
 data = data[filtered_entries]
 
-# bar chart - death event in age groups
+# bar chart - death event in age groups 
 live = {}
 dead = {}
 def num_of_cases(name, x, y):
@@ -55,7 +55,7 @@ for i, v in enumerate(dead.values()):
 plt.legend()
 plt.show()
 
-# same bar chart - percentage
+# same bar chart - by percentage
 live_prc = {}
 dead_prc = {}
 for k in live:
@@ -70,7 +70,7 @@ for i, v in enumerate(dead_prc.values()):
 plt.legend()
 plt.show()
 
-# pie chart - death by age group VS total death 
+# pie chart - death percentage for each age group from total number of death cases
 death_by_age = {}
 def death_prc_age(group_name, x, y):
     age_group = data.loc[(data["age"] > x) & (data["age"] < y)]
@@ -88,6 +88,23 @@ plt.figure(figsize = (5, 5))
 plt.pie(death_by_age.values(), labels = death_by_age.keys(), autopct = "%1.2f%%")
 plt.title("Percentage of deaths by age groups out of total deaths cases", size = 18)
 plt.show()
+
+# distribution plot for numerical columns - comparing death and recovery cases
+def dist_plot(column_name, title):
+    num_data = data[[column_name, "DEATH_EVENT"]]
+    death = num_data.loc[num_data["DEATH_EVENT"] == 1]
+    recovery = num_data.loc[num_data["DEATH_EVENT"] == 0]
+    sns.distplot(death[column_name], kde = False, label = "Death cases")
+    sns.distplot(recovery[column_name], kde = False, label = "Recovery cases")
+    plt.xlabel(title)
+    plt.title("{}\n Death VS Recovery Cases".format(title), size = 18)
+    plt.legend()
+    plt.show()
+dist_plot("creatinine_phosphokinase", "Creatinine Phosphokinase's Levels")
+dist_plot("ejection_fraction", "Ejection Fraction's Levels")
+dist_plot("platelets", "Number of Platelets")
+dist_plot("serum_creatinine", "Serum Creatinine's Levels")
+dist_plot("serum_sodium", "Serum Sodium's Levels")
 
 # bar chart for each categorical column divided by death or recovery
 def cat_values(col, fls, tr, title):
@@ -115,7 +132,7 @@ cat_values("diabetes", "Non diabetic", "Diabetic", "Diabetes")
 cat_values("high_blood_pressure", "Normal Blood Pressure", "High Blood Pressure", "Blood Pressure")
 cat_values("sex", "Female", "Male", "Gender")
 
-# the probability of a patient to die - categorical values
+# the probability of a patient to die - categorical columns
 def probability(column_name, binary, title):
     PAB = data.loc[(data["DEATH_EVENT"] == 1) & (data[column_name] == binary)].shape[0]
     PA = data.loc[data[column_name] == binary].shape[0]
@@ -127,6 +144,29 @@ probability("high_blood_pressure", 1, "a patient with high blood pressure")
 probability("sex", 1, "a male")
 probability("sex", 0, "a female")
 
+# pie chart showing death VS recovery percentage in categorical columns
+def cat_val_pie(column_name, fls_title, tr_title):
+    fls = data.loc[(data[column_name] == 0) & (data["DEATH_EVENT"] == 0)].shape[0]
+    fls = round(fls / data.loc[data[column_name] == 0].shape[0] * 100, 2)
+    fls_pie = [fls, 100 - fls]
+    tr = data.loc[(data[column_name] == 1) & (data["DEATH_EVENT"] == 0)].shape[0]
+    tr = round(tr / data.loc[data[column_name] == 1].shape[0] * 100, 2)
+    tr_pie = [tr, 100 - tr]
+    plt.subplots(1, 2, figsize=(8,8))
+    plt.subplot(1, 2, 1)
+    plt.pie(fls_pie, labels = ["Recovery Cases", "Death Cases"],
+                autopct = "%1.2f%%", colors = ["dodgerblue" ,"hotpink"])
+    plt.title("{} group".format(fls_title), size = 14)
+    plt.subplot(1, 2, 2)
+    plt.pie(tr_pie, labels = ["Recovery Cases", "Death Cases"],
+                autopct = "%1.2f%%", colors = ["dodgerblue" ,"hotpink"])
+    plt.title("{} group".format(tr_title), size = 14)  
+cat_val_pie("smoking", "Non smokers", "Smokers")
+cat_val_pie("anaemia", "Non Anemic", "Anemic")
+cat_val_pie("diabetes", "Non diabetic", "Diabetic")
+cat_val_pie("high_blood_pressure", "Normal Blood Pressure", "High Blood Pressure")
+cat_val_pie("sex", "Female", "Male")            
+
 # KM curve - time VS death event
 kmf = KaplanMeierFitter()
 kmf.fit(data["time"], data["DEATH_EVENT"])
@@ -135,6 +175,41 @@ plt.xlabel("time from addmition to death (minutes)")
 plt.ylabel("s(t) - ratio of recovery cases")
 plt.title("survival curve\n time VS recovery cases", size = 16)
 plt.show()
+
+# random forest classification model (model + pictures attached to git folder)
+no_death_data = data.drop("DEATH_EVENT", 1)
+num_range = range(1, 150)
+num_score = []
+for num in num_range:
+    model = RandomForestClassifier(n_estimators = num)
+    score = cross_val_score(model, no_death_data, data["DEATH_EVENT"], cv = 10, scoring = "accuracy")
+    num_score.append(score.mean())
+plt.plot(num_range, num_score)
+plt.show()
+max_ne = [i for i in range(len(num_score)) if num_score[i] == max(num_score)]
+max_ne = num_range[max_ne[0]]
+if os.path.isfile(os.path.abspath("model.pkl")) == True:
+    model = joblib.load("model.pkl")
+else:
+    model = RandomForestClassifier(n_estimators = max_ne)
+    x_train, x_test, y_train, y_test = train_test_split(no_death_data, data["DEATH_EVENT"], random_state = 42, test_size=0.1,
+                                                    stratify=data["DEATH_EVENT"])
+    model.fit(x_train, y_train)
+    joblib.dump(model, "model.pkl") 
+#model score
+pred = model.predict(no_death_data)
+score = accuracy_score(pred, data["DEATH_EVENT"])
+print("model prediction score: " + str(round(score, 2)))
+# important features
+features = dict(zip(no_death_data.columns, model.feature_importances_)) 
+plt.bar(features.keys(), features.values())
+plt.xticks(rotation = "vertical")
+plt.show()
+#picture
+plt.figure(figsize = (150, 100))
+for i in range(1, 60, 10):
+    tree.plot_tree(model.estimators_[i], filled = True, proportion = True)
+    plt.savefig("model" + str(i) + ".png")
 
 # normalization of the data
 for col in data:
@@ -166,36 +241,6 @@ subplot("serum_sodium", "serum sodium levels")
 data = data.drop("time", 1)
 plt.figure(figsize = (12, 12))
 sns.heatmap(data.corr(), annot = True)
-plt.show()
-
-# random forest model - choosing ultimate NE (model in git file)
-no_death_data = data.drop("DEATH_EVENT", 1)
-num_range = range(1, 150)
-num_score = []
-for num in num_range:
-    model = RandomForestClassifier(n_estimators = num)
-    score = cross_val_score(model, no_death_data, data["DEATH_EVENT"], cv = 10, scoring = "accuracy")
-    num_score.append(score.mean())
-plt.plot(num_range, num_score)
-plt.show()
-max_ne = [i for i in range(len(num_score)) if num_score[i] == max(num_score)]
-max_ne = num_range[max_ne[0]]
-if os.path.isfile(os.path.abspath("model.pkl")) == True:
-    model = joblib.load("model.pkl")
-else:
-    model = RandomForestClassifier(n_estimators = max_ne)
-    x_train, x_test, y_train, y_test = train_test_split(no_death_data, data["DEATH_EVENT"], random_state = 42, test_size=0.1,
-                                                    stratify=data["DEATH_EVENT"])
-    model.fit(x_train, y_train)
-    joblib.dump(model, "model.pkl") 
-pred = model.predict(no_death_data)
-score = accuracy_score(pred, data["DEATH_EVENT"])
-print("model prediction score: " + str(round(score, 2)))
-
-# important features - bar chart
-features = dict(zip(no_death_data.columns, model.feature_importances_)) 
-plt.bar(features.keys(), features.values())
-plt.xticks(rotation = "vertical")
 plt.show()
 
 # loading a few trees for examination

@@ -262,10 +262,3 @@ plt.figure(figsize = (12, 12))
 sns.heatmap(data.corr(), annot = True)
 plt.title("Correlation Heatmap - Heart Failure Medical Record Dataset", size = SIZE18)
 plt.show()
-
-# loading a few trees for examination
-plt.figure(figsize = (150, 100))
-for i in range(1, 127, 20):
-    tree.plot_tree(model.estimators_[i], filled = True, proportion = True)
-    plt.savefig("model" + str(i) + ".png")
-    

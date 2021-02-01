@@ -21,21 +21,24 @@ abs_z_scores = np.abs(stats.zscore(data[["creatinine_phosphokinase", "ejection_f
 filtered_entries = (abs_z_scores < 3).all(axis=1)
 data = data[filtered_entries]
 
-# bar chart - death event in age groups 
 live = {}
 dead = {}
+
 def num_of_cases(name, x, y):
+    # bar chart - death event in age groups 
     age_group = data.loc[(data["age"] > x) & (data["age"] < y)]
     dead_from_age_group = (age_group.loc[age_group["DEATH_EVENT"] == 1]).shape[0]
     live_from_age_group = (age_group.loc[age_group["DEATH_EVENT"] == 0]).shape[0]
     live[name] = live_from_age_group
     dead[name] = dead_from_age_group  
+    
 num_of_cases("40-49", 39, 50)
 num_of_cases("50-59", 49, 60)
 num_of_cases("60-69", 59, 70)
 num_of_cases("70-79", 69, 80)
 num_of_cases("80-89", 79, 90)
 num_of_cases("90+", 89, 100)
+
 def age_bar(live_dic, dead_dic, title, y_label):
     plt.figure(figsize=(7,6))
     width = 0.3
@@ -47,6 +50,7 @@ def age_bar(live_dic, dead_dic, title, y_label):
     plt.title(title)
     plt.xlabel("Age by Groups")
     plt.ylabel(y_label)
+    
 age_bar(live, dead, "Number of Deaths or Recovery Cases from Heart Event According to Age Groups", "Number of Cases")
 for i, v in enumerate(live.values()):
     plt.text(i - 0.1, v + 1, str(v), fontweight = "bold")
@@ -70,14 +74,15 @@ for i, v in enumerate(dead_prc.values()):
 plt.legend()
 plt.show()
 
-# pie chart - death percentage for each age group from total number of death cases
 death_by_age = {}
 def death_prc_age(group_name, x, y):
+    # pie chart - death percentage for each age group from total number of death cases
     age_group = data.loc[(data["age"] > x) & (data["age"] < y)]
     dead_group = (age_group.loc[age_group["DEATH_EVENT"] == 1]).shape[0]
     dead_prc = dead_group / data.loc[data["DEATH_EVENT"] == 1].shape[0] * 100
     dead_prc = round(dead_prc, 2)
     death_by_age[group_name] = dead_prc 
+    
 death_prc_age("40-49", 39, 50)
 death_prc_age("50-59", 49, 60)
 death_prc_age("60-69", 59, 70)
@@ -89,8 +94,8 @@ plt.pie(death_by_age.values(), labels = death_by_age.keys(), autopct = "%1.2f%%"
 plt.title("Percentage of deaths by age groups out of total deaths cases", size = 18)
 plt.show()
 
-# distribution plot for numerical columns - comparing death and recovery cases
 def dist_plot(column_name, title):
+    # distribution plot for numerical columns - comparing death and recovery cases
     num_data = data[[column_name, "DEATH_EVENT"]]
     death = num_data.loc[num_data["DEATH_EVENT"] == 1]
     recovery = num_data.loc[num_data["DEATH_EVENT"] == 0]
@@ -100,14 +105,15 @@ def dist_plot(column_name, title):
     plt.title("{}\n Death VS Recovery Cases".format(title), size = 18)
     plt.legend()
     plt.show()
+    
 dist_plot("creatinine_phosphokinase", "Creatinine Phosphokinase's Levels")
 dist_plot("ejection_fraction", "Ejection Fraction's Levels")
 dist_plot("platelets", "Number of Platelets")
 dist_plot("serum_creatinine", "Serum Creatinine's Levels")
 dist_plot("serum_sodium", "Serum Sodium's Levels")
 
-# bar chart for each categorical column divided by death or recovery
 def cat_values(col, fls, tr, title):
+    # bar chart for each categorical column divided by death or recovery
     live = [data.loc[(data[col] == 0) & (data["DEATH_EVENT"] == 0)].shape[0],
            data.loc[(data[col] == 1) & (data["DEATH_EVENT"] == 0)].shape[0]]
     death = [data.loc[(data[col] == 0) & (data["DEATH_EVENT"] == 1)].shape[0],
@@ -126,17 +132,19 @@ def cat_values(col, fls, tr, title):
     for i, v in enumerate(death):
         plt.text(i + 0.08, v + 1, str(v), fontweight = "bold")
     plt.legend()
+    
 cat_values("smoking", "Non smoker", "Smoker", "Smoking")
 cat_values("anaemia", "Non Anemic", "Anemic", "Anemia")
 cat_values("diabetes", "Non diabetic", "Diabetic", "Diabetes")
 cat_values("high_blood_pressure", "Normal Blood Pressure", "High Blood Pressure", "Blood Pressure")
 cat_values("sex", "Female", "Male", "Gender")
 
-# the probability of a patient to die - categorical columns
 def probability(column_name, binary, title):
+    # the probability of a patient to die - categorical columns
     PAB = data.loc[(data["DEATH_EVENT"] == 1) & (data[column_name] == binary)].shape[0]
     PA = data.loc[data[column_name] == binary].shape[0]
     print("The probability of {0} to die from a heart failure is {1}%".format(title, round(PAB / PA * 100, 2)))
+    
 probability("smoking", 1, "a smoker")
 probability("anaemia", 1, "an anemic")
 probability("diabetes", 1, "a diabetic")
@@ -144,8 +152,8 @@ probability("high_blood_pressure", 1, "a patient with high blood pressure")
 probability("sex", 1, "a male")
 probability("sex", 0, "a female")
 
-# pie chart showing death VS recovery percentage in categorical columns
 def cat_val_pie(column_name, fls_title, tr_title):
+    # pie chart showing death VS recovery percentage in categorical columns
     fls = data.loc[(data[column_name] == 0) & (data["DEATH_EVENT"] == 0)].shape[0]
     fls = round(fls / data.loc[data[column_name] == 0].shape[0] * 100, 2)
     fls_pie = [fls, 100 - fls]
@@ -160,7 +168,8 @@ def cat_val_pie(column_name, fls_title, tr_title):
     plt.subplot(1, 2, 2)
     plt.pie(tr_pie, labels = ["Recovery Cases", "Death Cases"],
                 autopct = "%1.2f%%", colors = ["dodgerblue" ,"hotpink"])
-    plt.title("{} group".format(tr_title), size = 14)  
+    plt.title("{} group".format(tr_title), size = 14) 
+    
 cat_val_pie("smoking", "Non smokers", "Smokers")
 cat_val_pie("anaemia", "Non Anemic", "Anemic")
 cat_val_pie("diabetes", "Non diabetic", "Diabetic")
@@ -196,15 +205,18 @@ else:
                                                     stratify=data["DEATH_EVENT"])
     model.fit(x_train, y_train)
     joblib.dump(model, "model.pkl") 
+    
 #model score
 pred = model.predict(no_death_data)
 score = accuracy_score(pred, data["DEATH_EVENT"])
 print("model prediction score: " + str(round(score, 2)))
+
 # important features
 features = dict(zip(no_death_data.columns, model.feature_importances_)) 
 plt.bar(features.keys(), features.values())
 plt.xticks(rotation = "vertical")
 plt.show()
+
 #picture
 plt.figure(figsize = (150, 100))
 for i in range(1, 60, 10):
@@ -215,12 +227,13 @@ for i in range(1, 60, 10):
 for col in data:
     data[col] = data[col].apply(lambda num: num / data[col].max())
 
-# box plot - numerical values after normalization: death VS recovery
 def boxplot(column_name, binary, title):
+    # box plot - numerical values after normalization: death VS recovery
     boxplot_data = data[[column_name, "DEATH_EVENT"]]
     graph = boxplot_data.loc[boxplot_data["DEATH_EVENT"] == binary]
     plt.boxplot(graph[column_name])
     plt.title(title)
+    
 def subplot(column_name, main_title):
     f, axs =plt.subplots(1, 2, figsize=(8,4))
     f.suptitle("ratio of recovery and death cases by {}".format(main_title), size = 20)
@@ -230,6 +243,7 @@ def subplot(column_name, main_title):
     plt.subplot(1, 2, 2)
     boxplot(column_name, 1, "death cases")
     plt.show() 
+    
 subplot("age", "age")
 subplot("creatinine_phosphokinase", "creatinine phosphokinase levels")
 subplot("ejection_fraction", "ejection fraction levels")

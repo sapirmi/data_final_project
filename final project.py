@@ -25,7 +25,7 @@ data = data[filtered_entries]
 TRUE_FEATURE = 1
 FALSE_FEATURE = 0
 WIDTH = 0.3
-
+SIZE18 = 18
 
 live = {}
 dead = {}

@@ -24,8 +24,10 @@ data = data[filtered_entries]
 # value settings
 TRUE_FEATURE = 1
 FALSE_FEATURE = 0
+NUM_ROWS = 0 
 WIDTH = 0.3
 SIZE18 = 18
+CV10 = 10
 
 live = {}
 dead = {}
@@ -224,7 +226,7 @@ plt.show()
 
 #picture
 plt.figure(figsize = (150, 100))
-for i in range(1, 60, 10):
+for i in range(1, max_ne, 10):
     tree.plot_tree(model.estimators_[i], filled = True, proportion = True)
     plt.savefig("model" + str(i) + ".png")
 
